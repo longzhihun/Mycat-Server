@@ -37,6 +37,7 @@ import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.alibaba.druid.stat.TableStat.Relationship;
 import com.google.common.base.Strings;
 
+import io.mycat.backend.datasource.PhysicalDBNode;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -556,7 +557,9 @@ public class DruidMycatRouteStrategy extends AbstractRouteStrategy {
                     throw new SQLSyntaxErrorException("not found schema : " + relSchema);
                 }
             }
-            if (StringUtils.isNotBlank(tableName) && tableName.indexOf("%") < 0) {
+			// 2020/03/19 Ken.Li
+			// if (StringUtils.isNotBlank(tableName) && tableName.indexOf("%") < 0) {
+			if (StringUtils.isNotBlank(tableName) && tableName.indexOf("%") < 0 && !schema.getTables().isEmpty()) {
                 TableConfig tableConfig = schema.getTables().get(tableName.toUpperCase());
                 if (tableConfig == null) {
                     throw new SQLSyntaxErrorException(
@@ -571,7 +574,10 @@ public class DruidMycatRouteStrategy extends AbstractRouteStrategy {
             // remove db
             if (StringUtils.isNotBlank(relSchema)) {
 				if(schema.getDataNode() !=null) {
-					stmt = stmt.replaceAll(relSchema, schema.getDataNode());
+					// 2020/03/19 Ken.Li
+					// stmt = stmt.replaceAll(relSchema, schema.getDataNode());
+					PhysicalDBNode dataNode = MycatServer.getInstance().getConfig().getDataNodes().get(schema.getDataNode());
+					stmt = stmt.replaceAll(relSchema, dataNode.getDatabase());
 				} else {
 					if(fields[2] !=null ) {
 						stmt = stmt.replaceAll( fields[2] + "\\s*" + relSchema, "");
